@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What's Your Vibe Tonight? | Mood</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #f9f7f4;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:root {
+  --green: #1B3A2F;
+  --green-dark: #122820;
+  --green-pale: #e8f3ed;
+  --sage: #7aab8e;
+  --off-white: #f9f7f4;
+  --white: #ffffff;
+  --text: #1a1a1a;
+  --muted: #6b7b72;
+
+  /* pastel accents */
+  --pink:     #f5e0e0;
+  --lavender: #e5e0f5;
+  --sage-bg:  #ddf0e6;
+}
+
+.widget {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* ── Card shell ── */
+.card {
+  background: var(--white);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 32px rgba(27,58,47,0.10);
+}
+
+/* ── Header ── */
+.card-header {
+  background: var(--green);
+  padding: 22px 28px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.header-sep {
+  width: 1px;
+  height: 20px;
+  background: rgba(255,255,255,0.25);
+}
+
+.header-label {
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+  letter-spacing: 0.06em;
+}
+
+/* ── Screens ── */
+.screen {
+  display: none;
+  padding: 32px 28px 28px;
+  animation: fadeUp 0.35s ease both;
+}
+
+.screen.active { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Step indicator ── */
+.step-dots {
+  display: flex;
+  gap: 7px;
+  margin-bottom: 24px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green-pale);
+  transition: background 0.3s, transform 0.3s;
+}
+
+.dot.active {
+  background: var(--green);
+  transform: scale(1.2);
+}
+
+/* ── Question ── */
+.question {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--green);
+  line-height: 1.3;
+  margin-bottom: 8px;
+}
+
+.question-sub {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+/* ── Option cards ── */
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.opt {
+  position: relative;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: var(--off-white);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.opt:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(27,58,47,0.10);
+}
+
+.opt:active { transform: scale(0.98); }
+
+.opt.selected {
+  border-color: var(--green);
+  box-shadow: 0 4px 18px rgba(27,58,47,0.14);
+}
+
+.opt[data-accent="sage"]     { background: var(--sage-bg); }
+.opt[data-accent="lavender"] { background: var(--lavender); }
+.opt[data-accent="pink"]     { background: var(--pink); }
+
+.opt-icon {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.opt-text {}
+
+.opt-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+
+.opt-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+/* ── Checkmark ── */
+.opt-check {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.opt-check svg {
+  width: 12px;
+  height: 12px;
+  stroke: white;
+  stroke-width: 2.5;
+  fill: none;
+}
+
+.opt.selected .opt-check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ── Next button ── */
+.btn-next {
+  width: 100%;
+  margin-top: 20px;
+  padding: 16px;
+  background: var(--green);
+  color: var(--white);
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: background 0.2s, transform 0.15s;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px);
+}
+
+.btn-next.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+  transition: background 0.2s, transform 0.2s, opacity 0.25s;
+}
+
+.btn-next:hover  { background: var(--green-dark); }
+.btn-next:active { transform: scale(0.98); }
+
+/* ── Result screen ── */
+.result-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--green-pale);
+  color: var(--green);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+
+.result-icon-big {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 14px;
+}
+
+.result-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--green);
+  margin-bottom: 10px;
+  line-height: 1.25;
+}
+
+.result-body {
+  font-size: 15px;
+  color: #3a3a3a;
+  line-height: 1.65;
+  margin-bottom: 20px;
+}
+
+.terpene-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.tag {
+  background: var(--green-pale);
+  color: var(--green);
+  border-radius: 999px;
+  padding: 5px 13px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.cta-block {
+  background: var(--green);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.cta-text {
+  color: var(--white);
+}
+
+.cta-name {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+
+.cta-price {
+  font-size: 13px;
+  color: rgba(255,255,255,0.65);
+}
+
+.cta-btn {
+  background: var(--white);
+  color: var(--green);
+  border: none;
+  border-radius: 10px;
+  padding: 11px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  display: inline-block;
+  transition: transform 0.15s, box-shadow 0.15s;
+  flex-shrink: 0;
+}
+
+.cta-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+}
+
+.btn-restart {
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px;
+  background: transparent;
+  color: var(--muted);
+  border: 1.5px solid var(--green-pale);
+  border-radius: 10px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.btn-restart:hover {
+  border-color: var(--sage);
+  color: var(--green);
+}
+
+/* ── Disclaimer ── */
+.disclaimer {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 16px;
+  line-height: 1.5;
+  padding: 0 4px;
+}
+
+/* ── Progress bar ── */
+.progress-bar-wrap {
+  height: 3px;
+  background: var(--green-pale);
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--green);
+  transition: width 0.4s ease;
+}
+</style>
+</head>
+<body>
+
+<div class="widget">
+  <div class="card">
+
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress" style="width: 33%"></div>
+    </div>
+
+    <div class="card-header">
+      <span class="logo">Mood</span>
+      <div class="header-sep"></div>
+      <span class="header-label">Cannabis Education</span>
+    </div>
+
+    <!-- ── SCREEN 1 ── -->
+    <div class="screen active" id="s1">
+      <div class="step-dots">
+        <div class="dot active"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+      <p class="question">Where are you starting from tonight?</p>
+      <p class="question-sub">Pick the one that feels most true right now.</p>
+      <div class="options">
+        <div class="opt" data-accent="sage" data-val="sativa" onclick="select(this, 1)">
+          <div class="opt-icon">⚡</div>
+          <div class="opt-text">
+            <div class="opt-title">Stuck in my head</div>
+            <div class="opt-desc">Overthinking, low energy, want to get out of my own way</div>
+          </div>
+          <div class="opt-check"><svg viewBox="0 0 12 10"><polyline points="1,5 4,8 11,1"/></svg></div>
+        </div>
+        <div class="opt" data-accent="lavender" data-val="indica" onclick="select(this, 1)">
+          <div class="opt-icon">🌿</div>
+          <div class="opt-text">
+            <div class="opt-title">Physically wound up</div>
+            <div class="opt-desc">Tense, need to slow down and fully arrive in my body</div>
+          </div>
+          <div class="opt-check"><svg viewBox="0 0 12 10"><polyline points="1,5 4,8 11,1"/></svg></div>
+        </div>
+        <div class="opt" data-accent="pink" data-val="blend" onclick="select(this, 1)">
+          <div class="opt-icon">✨</div>
+          <div class="opt-text">
+            <div class="opt-title">A bit of both, honestly</div>
+            <div class="opt-desc">Mind and body both need a little coaxing tonight</div>
+          </div>
+          <div class="opt-check"><svg viewBox="0 0 12 10"><polyline points="1,5 4,8 11,1"/></svg></div>
+        </div>
+      </div>
+      <button class="btn-next" id="next1" onclick="goTo(2)">Next →</button>
+    </div>
+
+    <!-- ── SCREEN 2 ── -->
+    <div class="screen" id="s2">
+      <div class="step-dots">
+        <div class="dot"></div>
+        <div class="dot active"></div>
+        <div class="dot"></div>
+      </div>
+      <p class="question">What matters most tonight?</p>
+      <p class="question-sub">There's no wrong answer here.</p>
+      <div class="options">
+        <div class="opt" data-accent="sage" data-val="sativa" onclick="select(this, 2)">
+          <div class="opt-icon">🧠</div>
+          <div class="opt-text">
+            <div class="opt-title">Mental presence</div>
+            <div class="opt-desc">Confidence, playfulness, getting fully into the moment</div>
+          </div>
+          <div class="opt-check"><svg viewBox="0 0 12 10"><polyline points="1,5 4,8 11,1"/></svg></div>
+        </div>
+        <div class="opt" data-accent="lavender" data-val="indica" onclick="select(this, 2)">
+          <div class="opt-icon">🤲</div>
+          <div class="opt-text">
+            <div class="opt-title">Heightened touch</div>
+            <div class="opt-desc">Deep physical relaxation, amplified sensation</div>
+          </div>
+          <div class="opt-check"><svg viewBox="0 0 12 10"><polyline points="1,5 4,8 11,1"/></svg></div>
+        </div>
+        <div class="opt" data-accent="pink" data-val="blend" onclick="select(this, 2)">
+          <div class="opt-icon">💫</div>
+          <div class="opt-text">
+            <div class="opt-title">Skip the guesswork</div>
+            <div class="opt-desc">Something formulated to bring it all together</div>
+          </div>
+          <div class="opt-check"><svg viewBox="0 0 12 10"><polyline points="1,5 4,8 11,1"/></svg></div>
+        </div>
+      </div>
+      <button class="btn-next" id="next2" onclick="showResult()">See my result →</button>
+    </div>
+
+    <!-- ── RESULT SCREEN ── -->
+    <div class="screen" id="s-result">
+      <div class="step-dots">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot active"></div>
+      </div>
+      <div id="result-content"></div>
+      <button class="btn-restart" onclick="restart()">↩ Start over</button>
+      <p class="disclaimer">Individual response varies by body chemistry, tolerance, and context. Start with a lower amount. For adults 21+.</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  var answers = { q1: null, q2: null };
+
+  var results = {
+    sativa: {
+      icon: "⚡",
+      badge: "Sativa-Leaning",
+      title: "Your night calls for mental energy.",
+      body: "You'd do well with a sativa-leaning edible rich in limonene — the terpene linked to confidence, playfulness, and getting out of your own head. Start at 2.5–5mg and give it 60–90 minutes. Less is reliably more with this profile.",
+      tags: ["Limonene", "2.5–5mg to start", "60–90 min onset"],
+      cta: {
+        name: "Sexual Euphoria THC Gummies",
+        price: "From $35 · Nano fast-acting · 10-count",
+        url: "https://mood.com/product/sexual-euphoria-thc-gummies"
+      }
+    },
+    indica: {
+      icon: "🌿",
+      badge: "Indica-Leaning",
+      title: "Your night calls for deep body relaxation.",
+      body: "You'd do well with an indica-leaning edible rich in myrcene and linalool — terpenes that promote heightened touch sensitivity and physical calm. Start at 2.5–5mg. The body-heavy effect amplifies with edibles, so give it time.",
+      tags: ["Myrcene", "Linalool", "2.5–5mg to start", "60–90 min onset"],
+      cta: {
+        name: "Sexual Euphoria THC Gummies",
+        price: "From $35 · Nano fast-acting · 10-count",
+        url: "https://mood.com/product/sexual-euphoria-thc-gummies"
+      }
+    },
+    blend: {
+      icon: "✨",
+      badge: "Formulated Blend",
+      title: "Skip the guessing — this one's built for tonight.",
+      body: "Rather than choosing between sativa or indica, a formulated blend covers both. Mood's Sexual Euphoria Gummies combine Delta-9 THC, THCv for energy, broad-spectrum CBD for calm, and nine botanical aphrodisiacs in a nano fast-acting format. Onset in 5–15 minutes.",
+      tags: ["Delta-9 THC", "THCv", "Broad-spectrum CBD", "5–15 min onset"],
+      cta: {
+        name: "Sexual Euphoria THC Gummies",
+        price: "From $35 · Nano fast-acting · 10-count",
+        url: "https://mood.com/product/sexual-euphoria-thc-gummies"
+      }
+    }
+  };
+
+  function select(el, q) {
+    // Deselect siblings
+    var opts = el.parentNode.querySelectorAll('.opt');
+    opts.forEach(function(o) { o.classList.remove('selected'); });
+    el.classList.add('selected');
+
+    answers['q' + q] = el.getAttribute('data-val');
+
+    var btn = document.getElementById('next' + q);
+    btn.classList.add('visible');
+  }
+
+  function goTo(step) {
+    document.getElementById('s1').classList.remove('active');
+    document.getElementById('s2').classList.remove('active');
+    document.getElementById('s-result').classList.remove('active');
+
+    if (step === 2) {
+      document.getElementById('progress').style.width = '66%';
+      document.getElementById('s2').classList.add('active');
+    }
+  }
+
+  function tally() {
+    var votes = { sativa: 0, indica: 0, blend: 0 };
+    if (answers.q1) votes[answers.q1]++;
+    if (answers.q2) votes[answers.q2]++;
+
+    // If no clear winner (tie involving blend), blend wins
+    var top = 'blend';
+    var max = 0;
+    for (var k in votes) {
+      if (votes[k] > max) { max = votes[k]; top = k; }
+    }
+    return top;
+  }
+
+  function showResult() {
+    var winner = tally();
+    var r = results[winner];
+
+    var tagsHtml = r.tags.map(function(t) {
+      return '<span class="tag">' + t + '</span>';
+    }).join('');
+
+    document.getElementById('result-content').innerHTML =
+      '<div class="result-badge">' + r.icon + ' ' + r.badge + '</div>' +
+      '<p class="result-title">' + r.title + '</p>' +
+      '<p class="result-body">' + r.body + '</p>' +
+      '<div class="terpene-tags">' + tagsHtml + '</div>' +
+      '<div class="cta-block">' +
+        '<div class="cta-text">' +
+          '<div class="cta-name">' + r.cta.name + '</div>' +
+          '<div class="cta-price">' + r.cta.price + '</div>' +
+        '</div>' +
+        '<a class="cta-btn" href="' + r.cta.url + '" target="_blank" rel="noopener">Shop Now</a>' +
+      '</div>';
+
+    document.getElementById('s1').classList.remove('active');
+    document.getElementById('s2').classList.remove('active');
+    document.getElementById('s-result').classList.add('active');
+    document.getElementById('progress').style.width = '100%';
+  }
+
+  function restart() {
+    answers = { q1: null, q2: null };
+
+    // Reset option selections
+    document.querySelectorAll('.opt').forEach(function(o) {
+      o.classList.remove('selected');
+    });
+
+    // Hide next buttons
+    document.getElementById('next1').classList.remove('visible');
+    document.getElementById('next2').classList.remove('visible');
+
+    document.getElementById('s-result').classList.remove('active');
+    document.getElementById('s2').classList.remove('active');
+    document.getElementById('s1').classList.add('active');
+    document.getElementById('progress').style.width = '33%';
+  }
+</script>
+</body>
+</html>
